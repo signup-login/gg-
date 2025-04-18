@@ -11,23 +11,34 @@ document.getElementById("registerForm").addEventListener("submit", async functio
   const username = document.getElementById("username").value;
   const fullName = document.getElementById("fullname").value;
   const phone = document.getElementById("phone").value;
-  const currency = document.getElementById("currency").value;
+  const currencyCode = document.getElementById("currency").value;
+
+  // Map currency code to symbol
+  const currencySymbols = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£",
+    AUD: "A$",
+    CAD: "C$"
+    // Add more as needed
+  };
+
+  const currency = currencySymbols[currencyCode] || currencyCode;
+  const registrationDate = new Date().toISOString();
 
   try {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCred.user.uid;
 
-    // Save extra user data in Firestore
     await setDoc(doc(db, "users", uid), {
       email,
       username,
       fullName,
       phone,
-      currencySymbol: currency,
+      currency,
       balance: 0,
-      bonus: 0,
-      withdrawal: 0,
-      recentActivity: []
+      registrationDate
     });
 
     alert("Registration successful! Redirecting to login...");
