@@ -13,7 +13,8 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     const uid = userCred.user.uid;
 
     // Store UID in localStorage
-    localStorage.setItem("uid", uid);
+    localStorage.setItem("userId", uid);
+
 
     // Redirect to dashboard
     window.location.href = "dashboard.html";
