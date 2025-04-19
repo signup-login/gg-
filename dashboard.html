@@ -224,61 +224,108 @@
 
   <!-- Firebase SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      updateDoc
-    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    updateDoc,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyDukbtfDsjRQx1nHHPDIwvXpLO_6-_ctpc",
-  authDomain: "dashboard-1a4b7.firebaseapp.com",
-  projectId: "dashboard-1a4b7",
-  storageBucket: "dashboard-1a4b7.appspot.com",
-  messagingSenderId: "903212362192",
-  appId: "1:903212362192:web:ba9708bae1959e9404b1d5",
-  measurementId: "G-BRRSHR64XK"
-};
+  // --- 🔐 Firebase Configuration ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyDukbtfDsjRQx1nHHPDIwvXpLO_6-_ctpc",
+    authDomain: "dashboard-1a4b7.firebaseapp.com",
+    projectId: "dashboard-1a4b7",
+    storageBucket: "dashboard-1a4b7.appspot.com",
+    messagingSenderId: "903212362192",
+    appId: "1:903212362192:web:ba9708bae1959e9404b1d5",
+    measurementId: "G-BRRSHR64XK"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    async function fetchUserData() {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        console.error("User ID not found in localStorage.");
-        return;
-      }
+  // --- 💵 Currency Formatter ---
+  function updateBalanceDisplay(balance, currency) {
+    const symbolMap = {
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      INR: '₹',
+      CAD: 'C$',
+      AUD: 'A$'
+    };
+    const symbol = symbolMap[currency] || '$';
+    document.getElementById("balance-amount").textContent = `≈ ${symbol}${parseFloat(balance).toFixed(2)}`;
+  }
 
-      const userRef = doc(db, "users", userId);
-      const docSnap = await getDoc(userRef);
+  // --- 🧠 UI Setup ---
+  function setUserUI({ username = 'User', balance = 0, currency = 'USD' }) {
+    document.getElementById("welcome-username").textContent = `Welcome, ${username}`;
+    updateBalanceDisplay(balance, currency);
+  }
 
+  // --- 🔁 Real-Time Sync from Firestore ---
+  function listenToUserData(userId) {
+    const userRef = doc(db, "users", userId);
+
+    onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data();
-        document.getElementById("welcome-username").textContent = `Welcome, ${data.username || 'User'}`;
-        updateBalance(data.balance || 0, data.currency || 'USD');
+        const userData = docSnap.data();
+        setUserUI(userData);
       } else {
-        console.log("No such user document.");
+        console.warn(`No user document found for ID: ${userId}`);
+        alert("Account not found. Please log in again.");
+        window.location.href = "login.html";
       }
-    }
+    }, (error) => {
+      console.error("Error fetching user data:", error);
+      alert("Error fetching user data. Check your network or contact support.");
+    });
+  }
 
-    async function manuallyUpdateBalance(newBalance) {
-      const userId = localStorage.getItem("userId");
+  // --- 🚀 Initializer ---
+  function initUser() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      alert("Session expired or user ID missing. Please log in.");
+      window.location.href = "login.html";
+      return;
+    }
+    listenToUserData(userId);
+  }
+
+  // --- 🔃 DOM Ready Check ---
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initUser);
+  } else {
+    initUser();
+  }
+
+  // --- 🧰 Optional Manual Update Helpers ---
+  export async function manuallyUpdateBalance(newBalance) {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    try {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { balance: newBalance });
-      fetchUserData();
+    } catch (err) {
+      console.error("Failed to update balance:", err);
     }
+  }
 
-    async function updateUserCurrency(newCurrency) {
-      const userId = localStorage.getItem("userId");
+  export async function updateUserCurrency(newCurrency) {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    try {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { currency: newCurrency });
-      fetchUserData();
+    } catch (err) {
+      console.error("Failed to update currency:", err);
     }
-
-    document.addEventListener("DOMContentLoaded", fetchUserData);
-  </script>
+  }
+</script>
 </body>
 </html>
