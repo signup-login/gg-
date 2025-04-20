@@ -31,15 +31,17 @@ document.getElementById("registerForm").addEventListener("submit", async functio
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCred.user.uid;
 
-    await setDoc(doc(db, "users", uid), {
-      email,
-      username,
-      fullName,
-      phone,
-      currency,
-      balance: 0,
-      registrationDate
-    });
+   
+await setDoc(doc(db, "users", uid), {
+  email,
+  username,
+  fullName,
+  phone,
+  currency: currencyCode, // Store the code, not the symbol
+  balance: 0,
+  registrationDate
+});
+
 
     alert("Registration successful! Redirecting to login...");
     window.location.href = "login.html";
